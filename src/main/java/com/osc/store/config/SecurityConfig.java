@@ -18,11 +18,18 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    /** Always accepted, even when the deployed CORS_ORIGINS value is older. */
+    private static final List<String> ALWAYS_ALLOWED_ORIGINS = List.of(
+            "https://store.obsidian-shield.com",
+            "https://frontend.ytnafrica.live"
+    );
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtFilter) throws Exception {
@@ -53,18 +60,34 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource(AppProperties props) {
         CorsConfiguration cfg = new CorsConfiguration();
-        List<String> origins = props.getCors().getAllowedOrigins();
+        List<String> origins = new ArrayList<>();
+        for (String origin : props.getCors().getAllowedOrigins()) {
+            addOrigin(origins, origin);
+        }
+        for (String origin : ALWAYS_ALLOWED_ORIGINS) {
+            addOrigin(origins, origin);
+        }
         if (origins.contains("*")) {
             cfg.setAllowedOriginPatterns(List.of("*"));
         } else {
             cfg.setAllowedOrigins(origins);
         }
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         cfg.setExposedHeaders(List.of("Content-Disposition"));
         cfg.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
+    }
+
+    private static void addOrigin(List<String> origins, String origin) {
+        if (origin == null) {
+            return;
+        }
+        String trimmed = origin.trim();
+        if (!trimmed.isEmpty() && !origins.contains(trimmed)) {
+            origins.add(trimmed);
+        }
     }
 }
