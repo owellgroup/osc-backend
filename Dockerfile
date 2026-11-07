@@ -1,6 +1,8 @@
 # Build (from this directory, with .env filled in):
 #   docker build -t osc-markets-api .
-# Run, loading this directory's .env:
+# Run, loading this directory's .env.
+# If Postgres is on this same machine, the entrypoint uses the Docker gateway
+# when the public IP in SPRING_DATASOURCE_URL is not reachable from the container.
 #   docker run -d --name osc-markets-api --restart unless-stopped --env-file .env -p 8286:8286 osc-markets-api
 
 # ============================
